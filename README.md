@@ -1,3 +1,2 @@
 # spaceflyer
-
-I did not do everything myself!
+I did not do everything myself
