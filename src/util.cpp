@@ -5,7 +5,7 @@
 #include <math.h>
 #include <iostream>
 
-#include "glad.h"
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
@@ -51,8 +51,6 @@ Shader::Shader(const char* vs_source, const char* fs_source) {
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &buffer, NULL);
 	glCompileShader(fragmentShader);
-	success;
-	infoLog[512];
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
 	if(!success)
 	{
@@ -68,6 +66,85 @@ Shader::Shader(const char* vs_source, const char* fs_source) {
 	glLinkProgram(shaderProgram);
 
 	printf("shader compiled!!\n");
+
+}
+
+Shader::Shader(const char* vs_source, const char* fs_source, const char* gm_source) {
+
+	FILE* sourceFile = fopen(vs_source, "r");
+	fseek(sourceFile, 0, SEEK_END);
+	int size = ftell(sourceFile);
+	fseek(sourceFile, 0, SEEK_SET);
+	char* buffer = (char*) malloc(size*sizeof(char) + 1);
+	fread(buffer, 1, size, sourceFile);
+	fclose(sourceFile);
+	buffer[size] = '\0';
+
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &buffer, NULL);
+	glCompileShader(vertexShader);
+	int  success;
+	char infoLog[512];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if(!success)
+	{
+	    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+	    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+	free(buffer);
+
+	sourceFile = fopen(fs_source, "r");
+	fseek(sourceFile, 0, SEEK_END);
+	size = ftell(sourceFile);
+	rewind(sourceFile);
+	buffer = (char*) malloc(size*sizeof(char) + 1);
+	fread(buffer, sizeof(char), size, sourceFile);
+	fclose(sourceFile);
+	buffer[size] = '\0';
+
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &buffer, NULL);
+	glCompileShader(fragmentShader);
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if(!success)
+	{
+	    glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+	    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+	free(buffer);
+
+	sourceFile = fopen(gm_source, "r");
+	fseek(sourceFile, 0, SEEK_END);
+	size = ftell(sourceFile);
+	rewind(sourceFile);
+	buffer = (char*) malloc(size*sizeof(char) + 1);
+	fread(buffer, sizeof(char), size, sourceFile);
+	fclose(sourceFile);
+	buffer[size] = '\0';
+
+	geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+	glShaderSource(geometryShader, 1, &buffer, NULL);
+	glCompileShader(geometryShader);
+	glGetShaderiv(geometryShader, GL_COMPILE_STATUS, &success);
+	if(!success)
+	{
+	    glGetShaderInfoLog(geometryShader, 512, NULL, infoLog);
+	    std::cout << "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+	free(buffer);
+
+	shaderProgram = glCreateProgram();
+
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, geometryShader);
+	glAttachShader(shaderProgram, fragmentShader);
+
+	glLinkProgram(shaderProgram);
+
+	printf("gshader compiled!!\n");
+
+}
+Shader::Shader(void)  {
 
 }
 
@@ -87,6 +164,11 @@ void Shader::uniform1f(const char* name, float f) {
 void Shader::uniform3f(const char* name, glm::vec3 vec) {
 	int loc = glGetUniformLocation(shaderProgram, name);
 	glUniform3fv(loc, 1, glm::value_ptr(vec));
+}
+
+void Shader::uniform2f(const char* name, glm::vec2 vec) {
+	int loc = glGetUniformLocation(shaderProgram, name);
+	glUniform2fv(loc, 1, glm::value_ptr(vec));
 }
 
 void Shader::uniformMat4f(const char* name, glm::mat4 mat) {
@@ -226,5 +308,9 @@ void Solid::bind(void) {
 
 void Solid::draw(void) {
 	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, nVertex);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, nVertex);
+}
+void Solid::draw_pts(void) {
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_POINTS, 0, nVertex);
 }
